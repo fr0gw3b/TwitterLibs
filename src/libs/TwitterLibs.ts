@@ -27,7 +27,7 @@ export class TwitterLibs {
     
     - followers_scraper(name) : Scrap Followers by Name 
     - following_scraper(name) : Scrap Following by Name
-    - likers_scraper(tweet_id) : Scrap Like by ID // Todo
+    - likers_scraper(tweet_id) : Scrap Like by ID
     - retweeters_scraper(tweet_id) : Scrap Retweet by ID // Todo
     - quoters_scraper(tweet_id) : Scrap Quoters by ID // Todo
     - tweet_replies_scraper(tweet_id) : Scrap Replies by ID // Todo
@@ -85,14 +85,13 @@ export class TwitterLibs {
             const data = await resp.json();
 
             if(!data || data["errors"])
-                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + data? data["errors"][0]["message"] : "Error during process" ));
 
             return data[0]["id_str"]
         } catch(Exception: any) {
             return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
         }
     }
-
 
     /**
      * This is a function that follows a Twitter user by sending a POST request to the
@@ -131,8 +130,8 @@ export class TwitterLibs {
             const data = await resp.json();
             
             if(!data || data["errors"])
-                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
-    
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + data? data["errors"][0]["message"] : "Error during process" ));
+
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully Follow << ${name} >> ✅`))
         } catch(Exception: any) {
             return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
@@ -159,7 +158,7 @@ export class TwitterLibs {
             const data = await resp.json();
             
             if(!data || data["errors"])
-                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + data? data["errors"][0]["message"] : "Error during process" ));
     
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully like the tweet with id ${tweet_id} ✅`))
         } catch (Exception: any) {
@@ -187,7 +186,7 @@ export class TwitterLibs {
             const data = await resp.json();
             
             if(!data || data["errors"])
-                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + data? data["errors"][0]["message"] : "Error during process" ));
 
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully Retweet the tweet ${tweet_id} ✅`))
         } catch (Exception: any) {
@@ -247,7 +246,7 @@ export class TwitterLibs {
             const data = await resp.json();
             
             if(!data || data["errors"])
-                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + data? data["errors"][0]["message"] : "Error during process" ));
 
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully Retweet of ${tweet_link} ✅`))
         } catch (Exception: any) {
@@ -292,7 +291,7 @@ export class TwitterLibs {
             const data = await resp.json();
 
             if(!data || data["errors"])
-                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + data? data["errors"][0]["message"] : "Error during process" ));
 
             switch(data['event']['type']){
                 case "message_create":
@@ -362,7 +361,7 @@ export class TwitterLibs {
             const data = await resp.json();
             
             if(!data || data["errors"])
-                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + data? data["errors"][0]["message"] : "Error during process" ));
 
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully post comment of ${tweet_id} ✅`))
         } catch (Exception: any) {
@@ -400,8 +399,8 @@ export class TwitterLibs {
                 params = { variables: '{"userId":"' + user_id + '","count":1,"includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}', features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
                 resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
                 data = await resp.text();
-                if(!data)
-                    return log(chalk.red( "> ❌ Error during process" ));
+                if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
+                if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
                 cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
             } catch (Exception: any) {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
@@ -444,12 +443,13 @@ export class TwitterLibs {
             try {
                 resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
                 data = await resp.text();
-                if(!data) return log(chalk.red( "> ❌ Error during process" ));
+                if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
+                if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
             } catch (Exception: any) {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
             }
 
-            if(screen_names.split('@').length < 1000) {
+            if(screen_names.split('@').length < 5) {
                 for (let i = 1; i < data.split('"screen_name":"').length; i++) {
                     screen_names += '@' + data.split('"screen_name":"')[i].split('"')[0] + '\n';
                     nb_total_screen_names++;
@@ -502,8 +502,8 @@ export class TwitterLibs {
                 };
                 resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
                 data = await resp.text();
-                if(!data) return log(chalk.red( "> ❌ Error during process" ));
-
+                if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
+                if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
                 cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
             } catch (Exception: any) {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
@@ -549,7 +549,8 @@ export class TwitterLibs {
                 };
                 resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
                 data = await resp.text();
-                if(!data) return log(chalk.red( "> ❌ Error during process" ));
+                if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
+                if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
 
             } catch (Exception: any) {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
@@ -575,8 +576,105 @@ export class TwitterLibs {
         }
     }
 
-    public async likers_scraper() {
-        
-    }
+    /**
+     * This function scrapes Twitter accounts that have liked a specific tweet.
+     * @param {string} tweet_id - The ID of the tweet for which you want to scrape the likers.
+     * @param {number} amount - The number of likers to scrape from the tweet.
+     * @param {string} [cursor] - The cursor parameter is used to paginate through the results of the
+     * Twitter API request. It is a string that represents the position of the last result returned,
+     * allowing the next set of results to be retrieved.
+     * @returns It is not clear what is being returned as there are multiple return statements in the
+     * code and it depends on which one is executed.
+     */
+    public async likers_scraper(tweet_id: string, amount: number, cursor: string = "") {
+        const headers = {...this.headers};
+            headers['content-type'] = 'application/json';
 
+        const url = `https://twitter.com/i/api/graphql/chZuj2D-EyT1GapXpQrUnQ/Favoriters`;
+
+        let resp;
+        let data;
+        let params;
+
+        if(cursor == "") {
+            try {
+                params = {
+                    variables: '{"tweetId":"' + tweet_id + '","count":1,"includePromotedContent":false}',
+                    features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
+                }
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                data = await resp.text();
+                if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
+                if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
+                cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
+            } catch (Exception: any) {
+                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            }
+        }
+        
+        const now = new Date(),
+            year = now.getFullYear(),
+            month = String(now.getMonth() + 1).padStart(2, '0'),
+            day = String(now.getDate()).padStart(2, '0'),
+            hours = String(now.getHours()).padStart(2, '0'),
+            minutes = String(now.getMinutes()).padStart(2, '0'),
+            seconds = String(now.getSeconds()).padStart(2, '0')
+
+        const folder = path.join(__dirname, '../data/scraped/likers/');
+        const filename = `${day}-${month}-${year}_${hours}h-${minutes}m-${seconds}s.txt`;
+        const filepath = folder + filename
+
+        try {
+            if (!fs.existsSync(folder))
+                await fs.mkdirSync(folder, { recursive: true });
+            await fs.writeFileSync(filepath, "");
+        } catch (Exception: any) {
+            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+        }
+
+        let runned = true;
+        let screen_names = '';
+        let nb_total_screen_names = 0;
+        
+        while (runned == true) {
+            let file = await fs.readFileSync(filepath, 'utf-8');
+            let total = file.length
+            
+            if (total >= amount) {
+                runned = false;
+                return log(chalk.green(`> [${this.account_data["username"]}] All accounts has been scraped ✅`))
+            }
+
+            try {
+                params = {
+                    variables: '{"tweetId":"' + tweet_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}',
+                    features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
+                }
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                data = await resp.text();
+                if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
+                if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
+            } catch (Exception: any) {
+                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            }
+
+            if(screen_names.split('@').length < 5) {
+                for (let i = 1; i < data.split('"screen_name":"').length; i++) {
+                    screen_names += '@' + data.split('"screen_name":"')[i].split('"')[0] + '\n';
+                    nb_total_screen_names++;
+                }
+            } else {
+                try {
+                    let write = await fs.createWriteStream(filepath, { flags: 'a' });
+                    write.write(file + screen_names);
+                    screen_names = '';
+                } catch (Exception: any) {
+                    return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                }
+            }
+
+            cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
+            log(chalk.green(`> [${this.account_data["username"]}] You scraped ${nb_total_screen_names}/${amount} accounts - cursor: ${cursor} ✅`))
+        }
+    }
 }
