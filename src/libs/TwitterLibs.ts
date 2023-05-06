@@ -385,7 +385,7 @@ export class TwitterLibs {
             minutes = String(now.getMinutes()).padStart(2, '0'),
             seconds = String(now.getSeconds()).padStart(2, '0')
 
-        const folder = path.join(__dirname, '../data/scrapped/followers/');
+        const folder = path.join(__dirname, '../data/scraped/followers/');
         const filename = `${day}-${month}-${year}_${hours}h-${minutes}m-${seconds}s.txt`;
         const filepath = folder + filename
 
@@ -402,7 +402,7 @@ export class TwitterLibs {
             
             if (total >= amount) {
                 runned = false;
-                return log(chalk.green(`> [${this.account_data["username"]}] All accounts has been scrapped ✅`))
+                return log(chalk.green(`> [${this.account_data["username"]}] All accounts has been scraped ✅`))
             }
 
             params = { variables: '{"userId":"' + user_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}', features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}

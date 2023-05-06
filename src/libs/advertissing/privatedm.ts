@@ -1,4 +1,5 @@
 import { TwitterLibs } from '../TwitterLibs';
+import { log, prompts, chalk } from '../../modules/console'
 
 export async function PrivateDM() {
     const client = new TwitterLibs({
@@ -16,7 +17,5 @@ export async function PrivateDM() {
         "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
     });
 
-    await client.followers_scraper("Eilallif", 1000);
+    await client.send_dm("Eilallif", "");
 }
-
-// proxy.soax.com:9038:Sp7CS6O8sgyYcG1T:wifi;fr;;;
