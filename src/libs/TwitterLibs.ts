@@ -242,13 +242,17 @@ export class TwitterLibs {
             'queryId':'7TKRKCPuAGsmYde0CudbVg',
         }
 
-        const resp = await fetch(url, { headers: headers, method: 'POST', body: JSON.stringify(json_data), agent: this.proxy_agent});
-        const data = await resp.json();
-        
-        if(!data || data["errors"])
-            return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
+        try {
+            const resp = await fetch(url, { headers: headers, method: 'POST', body: JSON.stringify(json_data), agent: this.proxy_agent});
+            const data = await resp.json();
+            
+            if(!data || data["errors"])
+                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
 
-        return log(chalk.green(`> [${this.account_data["username"]}] Successfully Retweet of ${tweet_link} ✅`))
+            return log(chalk.green(`> [${this.account_data["username"]}] Successfully Retweet of ${tweet_link} ✅`))
+        } catch (Exception: any) {
+            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+        }
     }
 
     /**
@@ -283,19 +287,23 @@ export class TwitterLibs {
             },
         }
         
-        const resp = await fetch(url, { headers: headers, body: JSON.stringify(json_data),  method: 'POST', agent: this.proxy_agent});
-        const data = await resp.json();
+        try {
+            const resp = await fetch(url, { headers: headers, body: JSON.stringify(json_data),  method: 'POST', agent: this.proxy_agent});
+            const data = await resp.json();
 
-        if(!data || data["errors"])
-            return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
+            if(!data || data["errors"])
+                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
 
-        switch(data['event']['type']){
-            case "message_create":
-                log(chalk.green(`> [${this.account_data["username"]}] Message Sended to ${name} ✅`))
-                break;
-            default:
-                log(chalk.green("> ❌ Error : During the process"))
-                break;
+            switch(data['event']['type']){
+                case "message_create":
+                    log(chalk.green(`> [${this.account_data["username"]}] Message Sended to ${name} ✅`))
+                    break;
+                default:
+                    log(chalk.green("> ❌ Error : During the process"))
+                    break;
+            }
+        } catch (Exception: any) {
+            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
         }
     }
 
@@ -349,13 +357,18 @@ export class TwitterLibs {
             'queryId':'7TKRKCPuAGsmYde0CudbVg',
         }
 
-        const resp = await fetch(url, { headers: headers, method: 'POST', body: JSON.stringify(json_data), agent: this.proxy_agent});
-        const data = await resp.json();
-        
-        if(!data || data["errors"])
-            return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
+        try {
+            const resp = await fetch(url, { headers: headers, method: 'POST', body: JSON.stringify(json_data), agent: this.proxy_agent});
+            const data = await resp.json();
+            
+            if(!data || data["errors"])
+                return log(chalk.red( "> ❌ " + data? data["errors"][0]["message"] : "Error during process" ));
 
-        return log(chalk.green(`> [${this.account_data["username"]}] Successfully post comment of ${tweet_id} ✅`))
+            return log(chalk.green(`> [${this.account_data["username"]}] Successfully post comment of ${tweet_id} ✅`))
+        } catch (Exception: any) {
+            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+        }
+
     }
 
     /**
@@ -382,11 +395,17 @@ export class TwitterLibs {
         let resp;
         let data;
 
-        if(cursor == "") {
-            params = { variables: '{"userId":"' + user_id + '","count":1,"includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}', features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
-            resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
-            data = await resp.text();
-            cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
+        if(cursor == "") {            
+            try {
+                params = { variables: '{"userId":"' + user_id + '","count":1,"includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}', features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                data = await resp.text();
+                if(!data)
+                    return log(chalk.red( "> ❌ Error during process" ));
+                cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
+            } catch (Exception: any) {
+                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            }
         }
 
         const now = new Date(),
@@ -401,9 +420,13 @@ export class TwitterLibs {
         const filename = `${day}-${month}-${year}_${hours}h-${minutes}m-${seconds}s.txt`;
         const filepath = folder + filename
 
-        if (!fs.existsSync(folder))
-            await fs.mkdirSync(folder, { recursive: true });
-        await fs.writeFileSync(filepath, "");
+        try {
+            if (!fs.existsSync(folder))
+                await fs.mkdirSync(folder, { recursive: true });
+            await fs.writeFileSync(filepath, "");
+        } catch (Exception: any) {
+            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+        }
 
         let runned = true;
         let screen_names = '';
@@ -418,8 +441,13 @@ export class TwitterLibs {
             }
 
             params = { variables: '{"userId":"' + user_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}', features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
-            resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
-            data = await resp.text();
+            try {
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                data = await resp.text();
+                if(!data) return log(chalk.red( "> ❌ Error during process" ));
+            } catch (Exception: any) {
+                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            }
 
             if(screen_names.split('@').length < 1000) {
                 for (let i = 1; i < data.split('"screen_name":"').length; i++) {
@@ -427,9 +455,13 @@ export class TwitterLibs {
                     nb_total_screen_names++;
                 }
             } else {
-                let write = await fs.createWriteStream(filepath, { flags: 'a' });
-                write.write(file + screen_names);
-                screen_names = '';
+                try {
+                    let write = await fs.createWriteStream(filepath, { flags: 'a' });
+                    write.write(file + screen_names);
+                    screen_names = '';
+                } catch (Exception: any) {
+                    return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                }
             }
 
             cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
@@ -463,13 +495,19 @@ export class TwitterLibs {
         let data;
 
         if(cursor == "") {
-            params = {
-                variables: '{"userId":"' + user_id + '","count":1,"includePromotedContent":false}',
-                features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
-            };
-            resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
-            data = await resp.text();
-            cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
+            try {
+                params = {
+                    variables: '{"userId":"' + user_id + '","count":1,"includePromotedContent":false}',
+                    features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
+                };
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                data = await resp.text();
+                if(!data) return log(chalk.red( "> ❌ Error during process" ));
+
+                cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
+            } catch (Exception: any) {
+                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            }
         }
 
         const now = new Date(),
@@ -484,9 +522,13 @@ export class TwitterLibs {
         const filename = `${day}-${month}-${year}_${hours}h-${minutes}m-${seconds}s.txt`;
         const filepath = folder + filename
 
-        if (!fs.existsSync(folder))
-            await fs.mkdirSync(folder, { recursive: true });
-        await fs.writeFileSync(filepath, "");
+        try {
+            if (!fs.existsSync(folder))
+                await fs.mkdirSync(folder, { recursive: true });
+            await fs.writeFileSync(filepath, "");
+        } catch (Exception: any) {
+            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+        }
 
         let runned = true;
         let screen_names = '';
@@ -500,12 +542,18 @@ export class TwitterLibs {
                 return log(chalk.green(`> [${this.account_data["username"]}] All accounts has been scraped ✅`))
             }
 
-            params = {
-                variables: '{"userId":"' + user_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}',
-                features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
-            };
-            resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
-            data = await resp.text();
+            try {
+                params = {
+                    variables: '{"userId":"' + user_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}',
+                    features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
+                };
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                data = await resp.text();
+                if(!data) return log(chalk.red( "> ❌ Error during process" ));
+
+            } catch (Exception: any) {
+                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            }
 
             if(screen_names.split('@').length < 1000) {
                 for (let i = 1; i < data.split('"screen_name":"').length; i++) {
@@ -513,14 +561,22 @@ export class TwitterLibs {
                     nb_total_screen_names++;
                 }
             } else {
-                let write = await fs.createWriteStream(filepath, { flags: 'a' });
-                write.write(file + screen_names);
-                screen_names = '';
+                try {
+                    let write = await fs.createWriteStream(filepath, { flags: 'a' });
+                    write.write(file + screen_names);
+                    screen_names = '';
+                } catch (Exception: any) {
+                    return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                }
             }
 
             cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
             log(chalk.green(`> [${this.account_data["username"]}] You scraped ${nb_total_screen_names}/${amount} accounts - cursor: ${cursor} ✅`))
         }
+    }
+
+    public async likers_scraper() {
+        
     }
 
 }
