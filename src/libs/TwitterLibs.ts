@@ -37,7 +37,7 @@ export class TwitterLibs {
     - change_profile_pic(image) : Change Profile Picture
     - change_profile_banner(image) : Change Profile Banner
     - change_account_info(value) : Name, Location Date of Birth and Description
-     */
+    */
     constructor(account_data: { 
         username: string,
         phone?: string | null,
@@ -940,7 +940,8 @@ export class TwitterLibs {
               headers: {
                 ...headers
               },
-              body: formData
+              body: formData,
+              agent: this.proxy_agent
             }
         );
     }
@@ -963,7 +964,8 @@ export class TwitterLibs {
             method: 'POST',
             headers: {
               ...headers
-            }
+            },
+            agent: this.proxy_agent
           }
         ).then(res => res.json());
 
@@ -994,6 +996,7 @@ export class TwitterLibs {
                 headers: {
                     ...headers,
                 },
+                agent: this.proxy_agent
             }
         ).then((res) => res.json());
             
@@ -1019,7 +1022,8 @@ export class TwitterLibs {
                     method: 'POST',
                     headers: {
                         ...headers
-                    }
+                    },
+                    agent: this.proxy_agent
                 }
             ).then((res) => res.json());
 
@@ -1057,6 +1061,7 @@ export class TwitterLibs {
                 headers: {
                     ...headers,
                 },
+                agent: this.proxy_agent
             }
         ).then((res) => res.json());
         
@@ -1082,7 +1087,8 @@ export class TwitterLibs {
                     method: 'POST',
                     headers: {
                         ...headers
-                    }
+                    },
+                    agent: this.proxy_agent
                 }
             );
 
