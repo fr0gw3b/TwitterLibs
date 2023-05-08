@@ -7,17 +7,16 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 
 export class TwitterLibs {
     private account_data;
-    private csrf_token: string;
-    private auth_token: string;
-    private user_agent: string;
+    private csrf_token;
+    private auth_token;
+    private user_agent;
     private proxy;
     private proxy_agent;
     private headers;
 
     /**
      * TwitterLibs is a class for manage mass twitter account.
-     * @param {any} account_data - An object containing various account data such as username, phone?, password, email, csrf_token,
-     * auth_token, user_agent, proxies, and proxy_type.
+     * @param {any} account_data - An object containing various account data
      * @function 
     - follow(name) : Follow the account by Name
     - like_post(tweet_id) : Like a tweet by ID
@@ -28,15 +27,29 @@ export class TwitterLibs {
     
     - followers_scraper(name) : Scrap Followers by Name 
     - following_scraper(name) : Scrap Following by Name
+
     - likers_scraper(tweet_id) : Scrap Like by ID // Bugged
-    - retweeters_scraper(tweet_id) : Scrap Retweet by ID // Bugged
+    - retweeters_scraper(tweet_id) : Scrap Retweet by ID  // Bugged
     - quoters_scraper(tweet_id) : Scrap Quoters by ID // Todo
 
     - change_profile_pic(image) : Change Profile Picture // Todo
     - change_profile_banner(image) : Change Profile Banner // Todo
-    - change_account_info(what_to_change, new_value) : Name, Location Date of Birth and Description // Todo
+    - change_account_info(what_to_change, new_value) : Name, Location Date of Birth and Description
      */
-    constructor(account_data: any) {
+    constructor(account_data: { 
+        username: string,
+        phone?: string | null,
+        password: string,
+        email?: string,
+        email_password?: string,
+        auth_token: string,
+        csrf_token: string,
+        proxy_type: string,
+        proxies: string,
+        available?: boolean,
+        user_agent: string,
+        updated_at?: string,
+    }) {
         this.account_data = account_data;
 
         this.csrf_token = account_data["csrf_token"];
@@ -71,7 +84,7 @@ export class TwitterLibs {
      * up.
      * @returns the Twitter user ID of the user with the given screen name.
      */
-    private async get_id(name: string) {
+    private async get_id(name: string): Promise<string> {
         const headers = {...this.headers};
             headers['content-type'] = "application/json";
 
@@ -101,7 +114,7 @@ export class TwitterLibs {
      * @returns either an error message or a success message depending on the outcome of the follow
      * action.
      */
-    public async follow(name: string) {
+    public async follow(name: string): Promise<void> {
         const user_id = await this.get_id(name);
             if(!user_id) return;
         const headers = {...this.headers};
@@ -147,7 +160,7 @@ export class TwitterLibs {
      * it returns a green log message indicating the tweet ID and the username of the account that
      * liked the tweet.
      */
-    public async like_post(tweet_id: string){
+    public async like_post(tweet_id: string): Promise<void> {
         const headers = {...this.headers};
             headers['content-type'] = "application/json";
 
@@ -175,7 +188,7 @@ export class TwitterLibs {
      * was an error during the process, it returns a red log message with the error message or a
      * generic error message if no error message was provided.
      */
-    public async retweet(tweet_id: string) {
+    public async retweet(tweet_id: string): Promise<void> {
         const headers = {...this.headers};
             headers['content-type'] = "application/json";
 
@@ -202,7 +215,7 @@ export class TwitterLibs {
      * @returns a log message indicating whether the retweet was successful or not. If there was an
      * error during the process, it returns an error message.
      */
-    public async retweet_with_text(retweet_content: string, tweet_link: string) {
+    public async retweet_with_text(retweet_content: string, tweet_link: string): Promise<void> {
         const headers = {...this.headers};
             headers['content-type'] = "application/json";
 
@@ -265,7 +278,7 @@ export class TwitterLibs {
      * response data, the function will return a red error message with the error message from the
      * response data.
      */
-    public async send_dm(name: string, message: string) {
+    public async send_dm(name: string, message: string): Promise<void> {
         const user_id = await this.get_id(name);
             if(!user_id) return;
         const headers = {...this.headers};
@@ -314,7 +327,7 @@ export class TwitterLibs {
      * @returns a Promise that resolves to a log message indicating whether the comment was successfully
      * posted or not.
      */
-    public async comment_post(comment_content: string, tweet_id: string) {
+    public async comment_post(comment_content: string, tweet_id: string): Promise<void> {
         const headers = {...this.headers};
             headers['content-type'] = "application/json";
 
@@ -382,7 +395,7 @@ export class TwitterLibs {
      * @returns It is not clear what is being returned as the code snippet is incomplete and does not
      * include a return statement.
      */
-    public async followers_scraper(name: string, amount: number, cursor: string = "") {
+    public async followers_scraper(name: string, amount: number, cursor: string = ""): Promise<void> {
         const user_id = await this.get_id(name);
             if(!user_id) return;
         const headers = {...this.headers};
@@ -399,7 +412,7 @@ export class TwitterLibs {
                 params = { 
                     variables: '{"userId":"' + user_id + '","count":1,"includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}',
                     features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
-                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers, agent: this.proxy_agent })
                 data = await resp.text();
                 if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
                 if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
@@ -442,7 +455,7 @@ export class TwitterLibs {
 
             try {
                 params = { variables: '{"userId":"' + user_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}', features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
-                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers, agent: this.proxy_agent })
                 data = await resp.text();
                 if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
                 if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
@@ -494,7 +507,7 @@ export class TwitterLibs {
      * that performs web scraping of Twitter accounts that a user is following and writes the screen
      * names to a text file.
      */
-    public async followings_scraper(name: string, amount: number, cursor: string = "") {
+    public async followings_scraper(name: string, amount: number, cursor: string = ""): Promise<void> {
         const user_id = await this.get_id(name);
             if(!user_id) return;
         const headers = {...this.headers};
@@ -512,7 +525,7 @@ export class TwitterLibs {
                     variables: '{"userId":"' + user_id + '","count":1,"includePromotedContent":false}',
                     features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
                 };
-                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers, agent: this.proxy_agent })
                 data = await resp.text();
                 if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
                 if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
@@ -558,7 +571,7 @@ export class TwitterLibs {
                     variables: '{"userId":"' + user_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}',
                     features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
                 };
-                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers, agent: this.proxy_agent })
                 data = await resp.text();
                 if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
                 if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
@@ -607,7 +620,7 @@ export class TwitterLibs {
      * @returns It is not clear what is being returned as there are multiple return statements in the
      * code and it depends on which one is executed.
      */
-    public async likers_scraper(tweet_id: string, amount: number, cursor: string = "") {
+    public async likers_scraper(tweet_id: string, amount: number, cursor: string = ""): Promise<void> {
         const headers = {...this.headers};
             headers['content-type'] = 'application/json';
 
@@ -623,14 +636,28 @@ export class TwitterLibs {
                     variables: '{"tweetId":"' + tweet_id + '","count":1,"includePromotedContent":false}',
                     features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
                 }
-                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers, agent: this.proxy_agent })
                 data = await resp.text();
                 if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
                 if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
-                cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
+                cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0];
             } catch (Exception: any) {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
             }
+        }
+
+        try {
+            params = {
+                variables: '{"tweetId":"' + tweet_id + '","count":20,"cursor":"' + cursor + '","includePromotedContent":false}',
+                features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
+            }
+            console.log(params)
+            resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers, agent: this.proxy_agent })
+            data = await resp.text();
+            if(!data) { return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
+            if(data.includes('"errors"')) { return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
+        } catch (Exception: any) {
+            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
         }
 
         const now = new Date(),
@@ -644,7 +671,7 @@ export class TwitterLibs {
         const folder = path.join(__dirname, '../data/scraped/likers/');
         const filename = `${day}-${month}-${year}_${hours}h-${minutes}m-${seconds}s.txt`;
         const filepath = folder + filename
-
+        /**
         try {
             if (!fs.existsSync(folder))
                 await fs.mkdirSync(folder, { recursive: true });
@@ -704,7 +731,7 @@ export class TwitterLibs {
                     log(chalk.green(`> [${this.account_data["username"]}] You scraped ${total}/${amount} accounts - cursor: ${cursor} ✅`))
                 }
             }
-        }
+        } */
     }
 
     /**
@@ -718,7 +745,7 @@ export class TwitterLibs {
      * @returns It is not clear what is being returned as there are multiple return statements within
      * the function and it depends on the specific execution path that is taken.
      */
-    public async retweeters_scraper(tweet_id: string, amount: number, cursor: string = "") {
+    public async retweeters_scraper(tweet_id: string, amount: number, cursor: string = ""): Promise<void> {
         const headers = {...this.headers};
             headers['content-type'] = 'application/json';
 
@@ -734,7 +761,7 @@ export class TwitterLibs {
                     variables: '{"tweetId":"' + tweet_id + '","count":1,"includePromotedContent":false}',
                     features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}',
                 }
-                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers, agent: this.proxy_agent })
                 data = await resp.text();
                 if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
                 if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
@@ -780,13 +807,14 @@ export class TwitterLibs {
                     variables: '{"tweetId":"' + tweet_id + '","count":20,"cursor":"' + cursor + '","includePromotedContent":false}',
                     features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":false,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false,"dont_mention_me_view_api_enabled":true,"vibe_tweet_context_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',
                 }
-                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers, agent: this.proxy_agent })
                 data = await resp.text();
                 if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
                 if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
             } catch (Exception: any) {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
             }
+
 
             const screenNames = data.match(/"screen_name":"([^"]+)"/g);
             if (screenNames) {
@@ -816,6 +844,41 @@ export class TwitterLibs {
                 }
                 
             }
+        }
+    }
+
+
+    /**
+     * This is a function that updates a Twitter account's profile information using the
+     * Twitter API.
+     * @param updates - An object containing optional properties for updating the user's account
+     * information. The properties include birthdate_day, birthdate_month, birthdate_year, name,
+     * description, and location.
+     * @returns a Promise that resolves to a log message indicating whether the account info has been
+     * successfully updated or if there was an error during the process.
+     */
+    public async change_account_info(updates: { 
+        birthdate_day?: string,
+        birthdate_month?: string,
+        birthdate_year?: string,
+        name?: string,
+        description?: string,
+        location?: string
+    }): Promise<void> {
+        const headers = {...this.headers};
+        const url = `https://api.twitter.com/1.1/account/update_profile.json?` + new URLSearchParams(updates);
+
+        let resp;
+        let data;
+
+        try {
+            resp = await fetch(url, { headers: headers, method: 'POST', agent: this.proxy_agent })
+            data = await resp.json();
+            if(!data || data["errors"])
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + data? data["errors"][0]["message"] : "Error during process" ));
+            return log(chalk.green(`> [${this.account_data["username"]}] Account info has been updated ✅`))
+        } catch (Exception: any) {
+            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
         }
     }
 

@@ -1,6 +1,7 @@
 import { log, prompts, chalk } from './modules/console'
 import { scraping } from './libs/scraping/main';
 import { advertissing } from './libs/advertissing/main';
+import { utilities } from './libs/utilities/main';
 
 async function start() {
     log(chalk.green(`   ________  __       __  ______  ________  ________  ________  _______          ______   ______   ______  
@@ -51,6 +52,7 @@ export async function Issues() {
             break;
 
         case 'utilities':
+            utilities();
             break;
 
         case 'exit':
