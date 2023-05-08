@@ -30,12 +30,12 @@ export class TwitterLibs {
     - followers_scraper(name) : Scrap Followers by Name 
     - following_scraper(name) : Scrap Following by Name
 
-    - likers_scraper(tweet_id) : Scrap Like by ID // Bugged
-    - retweeters_scraper(tweet_id) : Scrap Retweet by ID  // Bugged
+    - likers_scraper(tweet_id) : Scrap Like by ID // Todo (Bugged)
+    - retweeters_scraper(tweet_id) : Scrap Retweet by ID  // Todo (Bugged)
     - quoters_scraper(tweet_id) : Scrap Quoters by ID // Todo
 
-    - change_profile_pic(image) : Change Profile Picture // Todo
-    - change_profile_banner(image) : Change Profile Banner // Todo
+    - change_profile_pic(image) : Change Profile Picture
+    - change_profile_banner(image) : Change Profile Banner
     - change_account_info(value) : Name, Location Date of Birth and Description
      */
     constructor(account_data: { 
@@ -934,7 +934,7 @@ export class TwitterLibs {
         const headers = { ...this.headers };
             headers['content-type'] = `multipart/form-data; boundary=${formData.getBoundary()}`;
 
-        let resp = await fetch(`https://upload.twitter.com/i/media/upload.json?command=APPEND&media_id=${mediaId}&segment_index=${segmentIndex}`,
+        await fetch(`https://upload.twitter.com/i/media/upload.json?command=APPEND&media_id=${mediaId}&segment_index=${segmentIndex}`,
             {
               method: 'POST',
               headers: {
@@ -998,7 +998,7 @@ export class TwitterLibs {
         ).then((res) => res.json());
             
         if(resp.media_id_string) {
-                const mediaId = resp.media_id_string;
+            const mediaId = resp.media_id_string;
                 
             const minChunckSize = Math.ceil(fileSize / 1000);
             const chunkSize = Math.max(minChunckSize, 1024 * 1024);
@@ -1029,6 +1029,76 @@ export class TwitterLibs {
             return log(chalk.green(`> [${this.account_data["username"]}] Account Avatar has been updated ✅`))
         } else {
             return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] Error specify a path" ));
+        }
+    }
+
+    /**
+     * This function uploads and sets a new profile banner image for a Twitter account.
+     * @param image - The image parameter is an object that contains the path of the image file to be
+     * uploaded for changing the profile banner.
+     * @returns a log message indicating whether the profile banner update was successful or not. If
+     * successful, it logs a green message saying "Account Avatar has been updated ✅". If there was an
+     * error during the process, it logs a red message with the error message.
+     */
+    public async change_profile_banner(image: { path: string }) {
+        let headers = {...this.headers};
+        let resp;
+        
+        const imagePath = path.join(__dirname, '../' + image.path);
+        const fileStream = fs.createReadStream(imagePath);
+
+        const stat = fs.statSync(imagePath);
+        const fileSize = stat.size;
+
+        resp = await fetch(
+            `https://upload.twitter.com/i/media/upload.json?command=INIT&total_bytes=${fileSize}&media_type=image%2Fjpeg`,
+            {
+                method: 'POST',
+                headers: {
+                    ...headers,
+                },
+            }
+        ).then((res) => res.json());
+        
+        if(resp.media_id_string) {
+            const mediaId = resp.media_id_string;
+                
+            const minChunckSize = Math.ceil(fileSize / 1000);
+            const chunkSize = Math.max(minChunckSize, 1024 * 1024);
+            const segments = Math.ceil(fileSize / chunkSize);
+
+            for (let segmentIndex = 0; segmentIndex < segments; segmentIndex++) {
+                const chunk = await this.readChunk(fileStream, chunkSize);
+                await this.chunkedUploadAppend(mediaId, chunk, segmentIndex);
+            }
+
+            resp = await this.chunkedUploadFinalize(mediaId);
+            if(!resp || resp["errors"])
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + resp ? resp["errors"][0]["message"] : "Error during process" ));
+                
+            resp = await fetch(
+                'https://api.twitter.com/1.1/account/update_profile_banner.json?media_id=' + mediaId,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...headers
+                    }
+                }
+            );
+
+            switch (resp.status) {
+                case 400:
+                    log(chalk.green(`> ❌ [${this.account_data["username"]}] Error : Either an image was not provided, or the image data could not be processed`))
+                    break;
+                case 422:
+                    log(chalk.green(`> ❌ [${this.account_data["username"]}] Error : The image could not be resized, or is too large`))
+                    break;
+                default:
+                    log(chalk.green(`> [${this.account_data["username"]}] Account Avatar has been updated ✅`));
+                    break;
+            }
+        } else {
+            return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] Error : " + resp ? resp : "Error during retrieve media id" ));
         }
     }
 
