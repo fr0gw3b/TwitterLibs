@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from 'path';
 import { log, chalk }  from "../modules/console";
 import { HttpsProxyAgent } from "https-proxy-agent";
+
 export class TwitterLibs {
     private account_data;
     private csrf_token: string;
@@ -15,7 +16,7 @@ export class TwitterLibs {
 
     /**
      * TwitterLibs is a class for manage mass twitter account.
-     * @param {any} account_data - An object containing various account data such as csrf_token,
+     * @param {any} account_data - An object containing various account data such as username, phone?, password, email, csrf_token,
      * auth_token, user_agent, proxies, and proxy_type.
      * @function 
     - follow(name) : Follow the account by Name
@@ -27,10 +28,9 @@ export class TwitterLibs {
     
     - followers_scraper(name) : Scrap Followers by Name 
     - following_scraper(name) : Scrap Following by Name
-    - likers_scraper(tweet_id) : Scrap Like by ID
-    - retweeters_scraper(tweet_id) : Scrap Retweet by ID // Todo
+    - likers_scraper(tweet_id) : Scrap Like by ID // Bugged
+    - retweeters_scraper(tweet_id) : Scrap Retweet by ID // Bugged
     - quoters_scraper(tweet_id) : Scrap Quoters by ID // Todo
-    - tweet_replies_scraper(tweet_id) : Scrap Replies by ID // Todo
 
     - change_profile_pic(image) : Change Profile Picture // Todo
     - change_profile_banner(image) : Change Profile Banner // Todo
@@ -394,9 +394,11 @@ export class TwitterLibs {
         let resp;
         let data;
 
-        if(cursor == "") {            
+        if(cursor == "") {
             try {
-                params = { variables: '{"userId":"' + user_id + '","count":1,"includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}', features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
+                params = { 
+                    variables: '{"userId":"' + user_id + '","count":1,"includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}',
+                    features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
                 resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
                 data = await resp.text();
                 if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
@@ -428,44 +430,54 @@ export class TwitterLibs {
         }
 
         let runned = true;
-        let screen_names = '';
-        let nb_total_screen_names = 0;
+        let written_lines = 0;
         while (runned == true) {
             let file = await fs.readFileSync(filepath, 'utf-8');
-            let total = file.length
-            
-            if (total >= amount) {
+            let total = file.split('\n').length
+
+            if(written_lines >= amount) {
                 runned = false;
                 return log(chalk.green(`> [${this.account_data["username"]}] All accounts has been scraped ✅`))
             }
 
-            params = { variables: '{"userId":"' + user_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}', features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
             try {
+                params = { variables: '{"userId":"' + user_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}', features: '{"dont_mention_me_view_api_enabled":true,"interactive_text_enabled":true,"responsive_web_uc_gql_enabled":false,"vibe_tweet_context_enabled":false,"responsive_web_edit_tweet_api_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',}
                 resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
                 data = await resp.text();
-                if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
-                if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
+                if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
+                if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
             } catch (Exception: any) {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
             }
 
-            if(screen_names.split('@').length < 5) {
-                for (let i = 1; i < data.split('"screen_name":"').length; i++) {
-                    screen_names += '@' + data.split('"screen_name":"')[i].split('"')[0] + '\n';
-                    nb_total_screen_names++;
-                }
-            } else {
-                try {
-                    let write = await fs.createWriteStream(filepath, { flags: 'a' });
-                    write.write(file + screen_names);
-                    screen_names = '';
-                } catch (Exception: any) {
-                    return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
-                }
-            }
+            const screenNames = data.match(/"screen_name":"([^"]+)"/g);
+            if (screenNames) {
+                let screen_names = screenNames.map(match => "@" + match.split(":")[1].replace(/"/g, "")).join("\n");
+                let screen_names_lines = screen_names.trim().split('\n').length;
+        
+                if (written_lines + screen_names_lines > amount) {
+                    let lines_remaining = amount - written_lines;
 
-            cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
-            log(chalk.green(`> [${this.account_data["username"]}] You scraped ${nb_total_screen_names}/${amount} accounts - cursor: ${cursor} ✅`))
+                    try {
+                        fs.appendFileSync(filepath, screen_names.trim().split('\n').slice(0, lines_remaining).join('\n') + '\n');
+                    } catch (err) {
+                        console.error(`Error appending screen names to the file ${file}: ${err}`);
+                    }
+
+                    written_lines += lines_remaining;
+                } else {
+                    try {
+                        fs.appendFileSync(filepath, screen_names);
+                    } catch (err) {
+                        console.error(`Error appending screen names to the file ${file}: ${err}`);
+                    }
+                    written_lines += screen_names_lines;
+                    
+                    cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
+                    log(chalk.green(`> [${this.account_data["username"]}] You scraped ${total}/${amount} accounts - cursor: ${cursor} ✅`))
+                }
+                
+            }
         }
     }
 
@@ -531,13 +543,12 @@ export class TwitterLibs {
         }
 
         let runned = true;
-        let screen_names = '';
-        let nb_total_screen_names = 0;
+        let written_lines = 0;
         while (runned == true) {
             let file = await fs.readFileSync(filepath, 'utf-8');
-            let total = file.length
-            
-            if (total >= amount) {
+            let total = file.split('\n').length
+
+            if(written_lines >= amount) {
                 runned = false;
                 return log(chalk.green(`> [${this.account_data["username"]}] All accounts has been scraped ✅`))
             }
@@ -549,30 +560,40 @@ export class TwitterLibs {
                 };
                 resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
                 data = await resp.text();
-                if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
-                if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
-
+                if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
+                if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
             } catch (Exception: any) {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
             }
 
-            if(screen_names.split('@').length < 1000) {
-                for (let i = 1; i < data.split('"screen_name":"').length; i++) {
-                    screen_names += '@' + data.split('"screen_name":"')[i].split('"')[0] + '\n';
-                    nb_total_screen_names++;
-                }
-            } else {
-                try {
-                    let write = await fs.createWriteStream(filepath, { flags: 'a' });
-                    write.write(file + screen_names);
-                    screen_names = '';
-                } catch (Exception: any) {
-                    return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
-                }
-            }
+            const screenNames = data.match(/"screen_name":"([^"]+)"/g);
+            if (screenNames) {
+                let screen_names = screenNames.map(match => "@" + match.split(":")[1].replace(/"/g, "")).join("\n");
+                let screen_names_lines = screen_names.trim().split('\n').length;
+        
+                if (written_lines + screen_names_lines > amount) {
+                    let lines_remaining = amount - written_lines;
 
-            cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
-            log(chalk.green(`> [${this.account_data["username"]}] You scraped ${nb_total_screen_names}/${amount} accounts - cursor: ${cursor} ✅`))
+                    try {
+                        fs.appendFileSync(filepath, screen_names.trim().split('\n').slice(0, lines_remaining).join('\n') + '\n');
+                    } catch (err) {
+                        console.error(`Error appending screen names to the file ${file}: ${err}`);
+                    }
+
+                    written_lines += lines_remaining;
+                } else {
+                    try {
+                        fs.appendFileSync(filepath, screen_names);
+                    } catch (err) {
+                        console.error(`Error appending screen names to the file ${file}: ${err}`);
+                    }
+                    written_lines += screen_names_lines;
+                    
+                    cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
+                    log(chalk.green(`> [${this.account_data["username"]}] You scraped ${total}/${amount} accounts - cursor: ${cursor} ✅`))
+                }
+                
+            }
         }
     }
 
@@ -611,7 +632,7 @@ export class TwitterLibs {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
             }
         }
-        
+
         const now = new Date(),
             year = now.getFullYear(),
             month = String(now.getMonth() + 1).padStart(2, '0'),
@@ -633,48 +654,169 @@ export class TwitterLibs {
         }
 
         let runned = true;
-        let screen_names = '';
-        let nb_total_screen_names = 0;
-        
+        let written_lines = 0;
         while (runned == true) {
             let file = await fs.readFileSync(filepath, 'utf-8');
-            let total = file.length
-            
-            if (total >= amount) {
+            let total = file.split('\n').length
+
+            if(written_lines >= amount) {
                 runned = false;
                 return log(chalk.green(`> [${this.account_data["username"]}] All accounts has been scraped ✅`))
             }
 
             try {
                 params = {
-                    variables: '{"tweetId":"' + tweet_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true}',
+                    variables: '{"tweetId":"' + tweet_id + '","count":100,"cursor":"' + cursor + '","includePromotedContent":false}',
                     features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}'
+                }
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                data = await resp.text();
+                if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
+                if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
+            } catch (Exception: any) {
+                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            }
+
+            const screenNames = data.match(/"screen_name":"([^"]+)"/g);
+            if (screenNames) {
+                let screen_names = screenNames.map(match => "@" + match.split(":")[1].replace(/"/g, "")).join("\n");
+                let screen_names_lines = screen_names.trim().split('\n').length;
+        
+                if (written_lines + screen_names_lines > amount) {
+                    let lines_remaining = amount - written_lines;
+
+                    try {
+                        fs.appendFileSync(filepath, screen_names.trim().split('\n').slice(0, lines_remaining).join('\n') + '\n');
+                    } catch (err) {
+                        console.error(`Error appending screen names to the file ${file}: ${err}`);
+                    }
+
+                    written_lines += lines_remaining;
+                } else {
+                    try {
+                        fs.appendFileSync(filepath, screen_names);
+                    } catch (err) {
+                        console.error(`Error appending screen names to the file ${file}: ${err}`);
+                    }
+                    written_lines += screen_names_lines;
+                    
+                    cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
+                    log(chalk.green(`> [${this.account_data["username"]}] You scraped ${total}/${amount} accounts - cursor: ${cursor} ✅`))
+                }
+            }
+        }
+    }
+
+    /**
+     * This function scrapes retweeters of a given tweet and saves their screen names to a file.
+     * @param {string} tweet_id - The ID of the tweet for which you want to scrape the retweeters.
+     * @param {number} amount - The number of retweeters to scrape.
+     * @param {string} [cursor] - The cursor parameter is used to paginate through the results of the
+     * retweeters_scraper function. It is initially set to an empty string, and then updated with each
+     * request to the Twitter API to retrieve the next set of retweeters. This allows the function to
+     * retrieve a large number of retwe
+     * @returns It is not clear what is being returned as there are multiple return statements within
+     * the function and it depends on the specific execution path that is taken.
+     */
+    public async retweeters_scraper(tweet_id: string, amount: number, cursor: string = "") {
+        const headers = {...this.headers};
+            headers['content-type'] = 'application/json';
+
+        const url = `https://twitter.com/i/api/graphql/g2ePSCh-xWUiS_vH03Mn7A/Retweeters`;
+
+        let resp;
+        let data;
+        let params;
+    
+        if(cursor == "") {
+            try {
+                params = {
+                    variables: '{"tweetId":"' + tweet_id + '","count":1,"includePromotedContent":false}',
+                    features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false}',
                 }
                 resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
                 data = await resp.text();
                 if(!data) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` ));
                 if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
+                cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
+            } catch (Exception: any) {
+                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            }
+        }
+            
+        const now = new Date(),
+            year = now.getFullYear(),
+            month = String(now.getMonth() + 1).padStart(2, '0'),
+            day = String(now.getDate()).padStart(2, '0'),
+            hours = String(now.getHours()).padStart(2, '0'),
+            minutes = String(now.getMinutes()).padStart(2, '0'),
+            seconds = String(now.getSeconds()).padStart(2, '0')
+    
+        const folder = path.join(__dirname, '../data/scraped/retweeters/');
+        const filename = `${day}-${month}-${year}_${hours}h-${minutes}m-${seconds}s.txt`;
+        const filepath = folder + filename
+    
+        try {
+            if (!fs.existsSync(folder))
+                await fs.mkdirSync(folder, { recursive: true });
+            await fs.writeFileSync(filepath, "");
+        } catch (Exception: any) {
+            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+        }
+
+        let runned = true;
+        let written_lines = 0;
+        while (runned == true) {
+            let file = await fs.readFileSync(filepath, 'utf-8');
+            let total = file.split('\n').length
+
+            if(written_lines >= amount) {
+                runned = false;
+                return log(chalk.green(`> [${this.account_data["username"]}] All accounts has been scraped ✅`))
+            }
+
+            try {
+                params = {
+                    variables: '{"tweetId":"' + tweet_id + '","count":20,"cursor":"' + cursor + '","includePromotedContent":false}',
+                    features: '{"rweb_lists_timeline_redesign_enabled":false,"blue_business_profile_image_shape_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":false,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":false,"responsive_web_enhance_cards_enabled":false,"dont_mention_me_view_api_enabled":true,"vibe_tweet_context_enabled":false,"standardized_nudges_for_misinfo_nudges_enabled":false}',
+                }
+                resp = await fetch(url + '?' + new URLSearchParams(params), { headers: headers })
+                data = await resp.text();
+                if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
+                if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
             } catch (Exception: any) {
                 return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
             }
 
-            if(screen_names.split('@').length < 5) {
-                for (let i = 1; i < data.split('"screen_name":"').length; i++) {
-                    screen_names += '@' + data.split('"screen_name":"')[i].split('"')[0] + '\n';
-                    nb_total_screen_names++;
-                }
-            } else {
-                try {
-                    let write = await fs.createWriteStream(filepath, { flags: 'a' });
-                    write.write(file + screen_names);
-                    screen_names = '';
-                } catch (Exception: any) {
-                    return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
-                }
-            }
+            const screenNames = data.match(/"screen_name":"([^"]+)"/g);
+            if (screenNames) {
+                let screen_names = screenNames.map(match => "@" + match.split(":")[1].replace(/"/g, "")).join("\n");
+                let screen_names_lines = screen_names.trim().split('\n').length;
+        
+                if (written_lines + screen_names_lines > amount) {
+                    let lines_remaining = amount - written_lines;
 
-            cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
-            log(chalk.green(`> [${this.account_data["username"]}] You scraped ${nb_total_screen_names}/${amount} accounts - cursor: ${cursor} ✅`))
+                    try {
+                        fs.appendFileSync(filepath, screen_names.trim().split('\n').slice(0, lines_remaining).join('\n') + '\n');
+                    } catch (err) {
+                        console.error(`Error appending screen names to the file ${file}: ${err}`);
+                    }
+
+                    written_lines += lines_remaining;
+                } else {
+                    try {
+                        fs.appendFileSync(filepath, screen_names);
+                    } catch (err) {
+                        console.error(`Error appending screen names to the file ${file}: ${err}`);
+                    }
+                    written_lines += screen_names_lines;
+                    
+                    cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]
+                    log(chalk.green(`> [${this.account_data["username"]}] You scraped ${total}/${amount} accounts - cursor: ${cursor} ✅`))
+                }
+                
+            }
         }
     }
+
 }

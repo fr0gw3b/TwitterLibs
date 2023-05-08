@@ -26,7 +26,7 @@ export async function Issues() {
         message: 'Pick a choice',
         choices: [
           { title: 'Tokens', description: 'Check your tokens', value: 'tokens' },
-          { title: 'Scraping', description: 'Followers, Following, Likers', value: 'scraping' },
+          { title: 'Scraping', description: 'Followers, Following, Likers, Retweeters', value: 'scraping' },
           { title: 'Advertissing', description: 'Mass Mentioning, DM', value: 'advertissing' },
           { title: 'Engagement', description: 'Mass Liking, Retweeting, Following', value: 'engagement' },
           { title: 'Utilities', description: 'Some tools ', value: 'utilities' },

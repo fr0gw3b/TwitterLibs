@@ -1,8 +1,10 @@
 import { log, prompts, chalk } from '../../modules/console'
 import { Issues } from '../..';
+
 import { Followers } from './followers';
 import { Following } from './following';
 import { Likers } from './likers';
+import { Retweeters } from './retweeters';
 
 function sleep(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
@@ -17,6 +19,7 @@ export async function scraping() {
           { title: 'Followers', description: 'Scrap followers of someone', value: 'followers' },
           { title: 'Following', description: 'Scrap following of someone', value: 'following' },
           { title: 'Likers', description: 'Scrap likers of a tweet', value: 'likers' },
+          { title: 'Retweeters', description: 'Scrap retweeters of a tweet', value: 'rt' },
           { title: 'Go backwards', value: 'return' },
         ]
     });
@@ -32,6 +35,10 @@ export async function scraping() {
 
         case 'likers':
             Likers();
+            break;
+
+        case 'rt':
+            Retweeters();
             break;
 
         case 'return':

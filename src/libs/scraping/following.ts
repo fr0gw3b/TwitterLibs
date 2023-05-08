@@ -6,7 +6,7 @@ export async function Following() {
         {
             type: 'text',
             name: 'username',
-            message: 'Choice the username you want scrap followers'
+            message: 'Choice the username you want scrap followings'
         },
         {
             type: 'text',
@@ -21,8 +21,8 @@ export async function Following() {
         "password": "440541tpWwu",
         "email": "waffhubenc@hotmail.com",
         "email_password": "ssE9v378",
-        "auth_token": "2e801704424cbeb418fa2ab5fb027dde8010b958",
-        "csrf_token": "d1d7da0cea7039504646a8195091d6d1",
+        "auth_token": "d1642119799d6cdadca21d7b1f34214194c50651",
+        "csrf_token": "d2d5224ddea6a6fc0837a7960c5b959946131595635662575f62b94a46ee3fcff16eabd509f2d40ca0daeeecbceec8d29d67e581f4be0b26c324a867f0401d7ae511878e4198acb18bfced3b852eeb79",
         "proxy_type": "http",
         "proxies": "proxy.digiproxy.cc:8082:lIGRfFHy0B:HMLr4IB1Ua_country-fr",
         "available": true,

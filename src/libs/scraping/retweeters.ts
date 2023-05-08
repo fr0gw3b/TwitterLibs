@@ -1,12 +1,12 @@
 import { log, prompts, chalk } from '../../modules/console'
 import { TwitterLibs } from '../TwitterLibs';
 
-export async function Followers() {
+export async function Retweeters() {
     const response = await prompts([
         {
             type: 'text',
-            name: 'username',
-            message: 'Choice the username you want scrap followers'
+            name: 'tweetid',
+            message: 'Give tweet id you want scrap retweeters'
         },
         {
             type: 'text',
@@ -30,5 +30,5 @@ export async function Followers() {
         "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
     });
 
-    await client.followers_scraper(response.username, response.amount);
+    await client.retweeters_scraper(response.tweetid, response.amount);
 }
