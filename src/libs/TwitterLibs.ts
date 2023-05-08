@@ -1,9 +1,11 @@
 
 import fetch from "node-fetch";
+import FormData from 'form-data';
 import * as fs from "fs";
 import * as path from 'path';
 import { log, chalk }  from "../modules/console";
 import { HttpsProxyAgent } from "https-proxy-agent";
+import got from "got";
 
 export class TwitterLibs {
     private account_data;
@@ -34,7 +36,7 @@ export class TwitterLibs {
 
     - change_profile_pic(image) : Change Profile Picture // Todo
     - change_profile_banner(image) : Change Profile Banner // Todo
-    - change_account_info(what_to_change, new_value) : Name, Location Date of Birth and Description
+    - change_account_info(value) : Name, Location Date of Birth and Description
      */
     constructor(account_data: { 
         username: string,
@@ -879,6 +881,154 @@ export class TwitterLibs {
             return log(chalk.green(`> [${this.account_data["username"]}] Account info has been updated ✅`))
         } catch (Exception: any) {
             return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+        }
+    }
+
+    /**
+     * This function reads a chunk of data from a stream asynchronously and returns a promise that
+     * resolves with the chunk.
+     * @param {any} stream - The stream parameter is an object that represents a readable stream of
+     * data. It could be a file stream, network stream, or any other type of stream that emits data
+     * events.
+     * @param {any} size - The size parameter is the number of bytes to read from the stream.
+     * @returns The function `readChunk` returns a Promise that resolves to a Buffer containing the
+     * specified number of bytes read from the input stream.
+     */
+    private async readChunk(stream: any, size: any) {
+        return new Promise((resolve, reject) => {
+          const buffer = Buffer.alloc(size);
+          let pos = 0;
+      
+          stream.on('error', reject);
+          stream.on('end', () => {
+            resolve(buffer.slice(0, pos));
+          });
+          stream.on('readable', () => {
+            let chunk;
+            while ((chunk = stream.read(Math.min(size - pos, 1024 * 1024)))) {
+              chunk.copy(buffer, pos);
+              pos += chunk.length;
+              if (pos === size) {
+                resolve(buffer);
+              }
+            }
+          });
+        });
+    }
+
+    /**
+     * This function appends a chunk of media to a Twitter upload using multipart/form-data.
+     * @param {string} mediaId - A string representing the unique identifier for the media being
+     * uploaded.
+     * @param {any} media - The binary data of the media file being uploaded. It is passed as the
+     * second argument to the function.
+     * @param {number} segmentIndex - The segment index is the index of the media segment being
+     * uploaded in a chunked upload. In a chunked upload, large media files are split into smaller
+     * segments and uploaded one at a time. The segment index indicates the order in which the segments
+     * should be appended to the media file on the server.
+     */
+    private async chunkedUploadAppend(mediaId: string, media: any, segmentIndex: number) {
+        const formData = new FormData();
+            formData.append('media', media, { contentType: 'application/octet-stream' });
+      
+        const headers = { ...this.headers };
+            headers['content-type'] = `multipart/form-data; boundary=${formData.getBoundary()}`;
+
+        let resp = await fetch(`https://upload.twitter.com/i/media/upload.json?command=APPEND&media_id=${mediaId}&segment_index=${segmentIndex}`,
+            {
+              method: 'POST',
+              headers: {
+                ...headers
+              },
+              body: formData
+            }
+        );
+    }
+
+    /**
+     * This function finalizes a chunked media upload on Twitter.
+     * @param {string} mediaId - The mediaId parameter is a string that represents the unique
+     * identifier for the media file being uploaded to Twitter. It is used to track the progress of the
+     * upload and to perform various operations on the media file, such as finalizing the upload or
+     * appending additional chunks of data.
+     * @returns the JSON response from the Twitter API after making a POST request to finalize a
+     * chunked media upload with the specified media ID.
+     */
+    private async chunkedUploadFinalize(mediaId: string) {
+        const headers = {...this.headers};
+
+        let resp = await fetch(
+          `https://upload.twitter.com/i/media/upload.json?command=FINALIZE&media_id=${mediaId}`,
+          {
+            method: 'POST',
+            headers: {
+              ...headers
+            }
+          }
+        ).then(res => res.json());
+
+        return resp;
+    }
+
+    /**
+     * This function uploads a new profile picture for a Twitter account using chunked uploading.
+     * @param image - The image parameter is an object that contains the path of the image file to be
+     * uploaded as the profile picture.
+     * @returns a Promise that resolves to a log message indicating whether the account avatar has been
+     * updated successfully or an error message if there was an error during the process.
+     */
+    public async change_profile_pic(image: { path: string }) {
+        let headers = {...this.headers};
+        let resp;
+        
+        const imagePath = path.join(__dirname, '../' + image.path);
+        const fileStream = fs.createReadStream(imagePath);
+
+        const stat = fs.statSync(imagePath);
+        const fileSize = stat.size;
+
+        resp = await fetch(
+            `https://upload.twitter.com/i/media/upload.json?command=INIT&total_bytes=${fileSize}&media_type=image%2Fjpeg`,
+            {
+                method: 'POST',
+                headers: {
+                    ...headers,
+                },
+            }
+        ).then((res) => res.json());
+            
+        if(resp.media_id_string) {
+                const mediaId = resp.media_id_string;
+                
+            const minChunckSize = Math.ceil(fileSize / 1000);
+            const chunkSize = Math.max(minChunckSize, 1024 * 1024);
+            const segments = Math.ceil(fileSize / chunkSize);
+
+            for (let segmentIndex = 0; segmentIndex < segments; segmentIndex++) {
+                const chunk = await this.readChunk(fileStream, chunkSize);
+                await this.chunkedUploadAppend(mediaId, chunk, segmentIndex);
+            }
+
+            resp = await this.chunkedUploadFinalize(mediaId);
+            if(!resp || resp["errors"])
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + resp ? resp["errors"][0]["message"] : "Error during process" ));
+                
+            resp = await fetch(
+                'https://api.twitter.com/1.1/account/update_profile_image.json?media_id=' + mediaId,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...headers
+                    }
+                }
+            ).then((res) => res.json());
+
+            if(!resp || resp["errors"])
+                return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + resp ? resp["errors"][0]["message"] : "Error during process" ));
+              
+            return log(chalk.green(`> [${this.account_data["username"]}] Account Avatar has been updated ✅`))
+        } else {
+            return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] Error specify a path" ));
         }
     }
 
