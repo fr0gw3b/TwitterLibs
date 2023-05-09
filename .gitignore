@@ -1,3 +1,4 @@
 build/
 node_modules/
 proxies.txt
+package-lock.json
