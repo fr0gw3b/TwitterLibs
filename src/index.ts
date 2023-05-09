@@ -2,6 +2,7 @@ import { log, prompts, chalk } from './modules/console'
 import { scraping } from './libs/scraping/main';
 import { advertissing } from './libs/advertissing/main';
 import { utilities } from './libs/utilities/main';
+import { Tokens } from './libs/tokens/main';
 
 async function start() {
     log(chalk.green(`   ________  __       __  ______  ________  ________  ________  _______          ______   ______   ______  
@@ -38,6 +39,7 @@ export async function Issues() {
     switch (response.issues_values)
     {
         case 'tokens':
+            Tokens();
             break;
 
         case 'scraping':

@@ -5,7 +5,6 @@ import * as fs from "fs";
 import * as path from 'path';
 import { log, chalk }  from "../modules/console";
 import { HttpsProxyAgent } from "https-proxy-agent";
-import got from "got";
 
 export class TwitterLibs {
     private account_data;
@@ -104,7 +103,7 @@ export class TwitterLibs {
 
             return data[0]["id_str"]
         } catch(Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
     }
 
@@ -149,7 +148,7 @@ export class TwitterLibs {
 
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully Follow << ${name} >> ✅`))
         } catch(Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
     }
 
@@ -177,7 +176,7 @@ export class TwitterLibs {
     
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully like the tweet with id ${tweet_id} ✅`))
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
     }
 
@@ -205,7 +204,7 @@ export class TwitterLibs {
 
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully Retweet the tweet ${tweet_id} ✅`))
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
     }
 
@@ -265,7 +264,7 @@ export class TwitterLibs {
 
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully Retweet of ${tweet_link} ✅`))
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
     }
 
@@ -317,7 +316,7 @@ export class TwitterLibs {
                     break;
             }
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
     }
 
@@ -380,7 +379,7 @@ export class TwitterLibs {
 
             return log(chalk.green(`> [${this.account_data["username"]}] Successfully post comment of ${tweet_id} ✅`))
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
 
     }
@@ -420,7 +419,7 @@ export class TwitterLibs {
                 if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
                 cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
             } catch (Exception: any) {
-                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
             }
         }
 
@@ -441,7 +440,7 @@ export class TwitterLibs {
                 await fs.mkdirSync(folder, { recursive: true });
             await fs.writeFileSync(filepath, "");
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
 
         let runned = true;
@@ -462,7 +461,7 @@ export class TwitterLibs {
                 if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
                 if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
             } catch (Exception: any) {
-                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
             }
 
             const screenNames = data.match(/"screen_name":"([^"]+)"/g);
@@ -533,7 +532,7 @@ export class TwitterLibs {
                 if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
                 cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
             } catch (Exception: any) {
-                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
             }
         }
 
@@ -554,7 +553,7 @@ export class TwitterLibs {
                 await fs.mkdirSync(folder, { recursive: true });
             await fs.writeFileSync(filepath, "");
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
 
         let runned = true;
@@ -578,7 +577,7 @@ export class TwitterLibs {
                 if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
                 if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
             } catch (Exception: any) {
-                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
             }
 
             const screenNames = data.match(/"screen_name":"([^"]+)"/g);
@@ -644,7 +643,7 @@ export class TwitterLibs {
                 if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
                 cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0];
             } catch (Exception: any) {
-                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
             }
         }
 
@@ -659,7 +658,7 @@ export class TwitterLibs {
             if(!data) { return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
             if(data.includes('"errors"')) { return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
 
         const now = new Date(),
@@ -679,7 +678,7 @@ export class TwitterLibs {
                 await fs.mkdirSync(folder, { recursive: true });
             await fs.writeFileSync(filepath, "");
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
 
         let runned = true;
@@ -703,7 +702,7 @@ export class TwitterLibs {
                 if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
                 if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
             } catch (Exception: any) {
-                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
             }
 
             const screenNames = data.match(/"screen_name":"([^"]+)"/g);
@@ -769,7 +768,7 @@ export class TwitterLibs {
                 if(data.includes('"errors"')) return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` ));
                 cursor = data.split('"TimelineTimelineCursor","value":"')[1].split('"')[0]; 
             } catch (Exception: any) {
-                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
             }
         }
             
@@ -790,7 +789,7 @@ export class TwitterLibs {
                 await fs.mkdirSync(folder, { recursive: true });
             await fs.writeFileSync(filepath, "");
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
 
         let runned = true;
@@ -814,7 +813,7 @@ export class TwitterLibs {
                 if(!data) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error during process` )); }
                 if(data.includes('"errors"')) { runned = false; return log(chalk.red( `> ❌ [${this.account_data["username"]}] Error in response : ${data}` )); }
             } catch (Exception: any) {
-                return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+                return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
             }
 
 
@@ -880,7 +879,7 @@ export class TwitterLibs {
                 return log(chalk.red( "> ❌ [" + this.account_data["username"] + "] " + data? data["errors"][0]["message"] : "Error during process" ));
             return log(chalk.green(`> [${this.account_data["username"]}] Account info has been updated ✅`))
         } catch (Exception: any) {
-            return log(chalk.red( "> ❌ " + Exception ? Exception : "Error during process" ));
+            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
         }
     }
 
