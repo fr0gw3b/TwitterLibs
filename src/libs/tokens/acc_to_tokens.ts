@@ -1,6 +1,7 @@
 import { log, prompts, chalk } from '../../modules/console'
 import * as fs from "fs";
 import * as path from 'path';
+import { TwitterAuth } from '../TwitterAuth';
 
 export async function AccountsToTokens() {
     let folder;
@@ -62,30 +63,30 @@ export async function AccountsToTokens() {
     for (let i = 0; i < lines.length; i++) {
         let username: string;
         let password: string;
-        let email: string;
-        let phone: string | null;
+        let phone: any;
+        let email: any;
 
-        let params1: string = '';
-        let params2: string = '';
+        let params1: any;
+        let splitted_lines = lines[i].split(':');
+            if(splitted_lines.length < 3) throw new Error( `Account line ${i} has a wrong format` );
+        [ username, password, params1 ] = splitted_lines
+        let params2: string = splitted_lines[3] ? splitted_lines[3] : "";
 
-        try {
-            let splitted_lines = lines[i].split(':');
-                if(splitted_lines.length < 3) throw new Error( `Account line ${i} has a wrong format` );
-            [username, password, params1, params2] = splitted_lines;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (emailRegex.test(params1)) {
+            email = params1
+            if(params2) phone = params2;
+        } else { phone = params1 }
 
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-            if (emailRegex.test(params1)) {
-                email = params1
-                if(params2) phone = params2;
-            } else {
-                phone = params1
-            }
-        } catch(Exception: any) {
-            return log(chalk.red( `> ❌ ${Exception ? Exception.message : "Error during process"}` ));
+        if(params1 && !params2 && phone) {
+            var client = new TwitterAuth({ username: username, password: password, phone: phone });
+        } else {
+            if(phone) { 
+                var client = new TwitterAuth({ username: username, password: password, email: email, phone: phone });
+            } else { var client = new TwitterAuth({ username: username, password: password, email: email }); }
         }
 
-        // Vérifier le compte en question
+        await client.login();
 
         /** Ajouter le compte en format JSON (!error)
         {
